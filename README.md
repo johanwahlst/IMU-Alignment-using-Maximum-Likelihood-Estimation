@@ -2,4 +2,4 @@
 
 Matlab code producing figures in article:
 
-"IMU Alignment using Maximum Likelihood Estimation", Johan Wahlström, Fermin Orozco, Man Luo.
+"IMU Alignment using Maximum Likelihood Estimation" by Johan Wahlström, Fermin Orozco, Man Luo.
