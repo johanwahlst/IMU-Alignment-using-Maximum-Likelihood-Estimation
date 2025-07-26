@@ -1,4 +1,4 @@
-function euler_angles = alignment_Nericell(data)
+function euler_angles = alignment_KF(data)
 
     closest_indices = data.gnss.closest_indices;
 
@@ -11,9 +11,9 @@ function euler_angles = alignment_Nericell(data)
     med_acc = median(data.imu.accelerometers(:,zv_indices),2);
     rp = [atan2(med_acc(2),med_acc(3)) atan2(-med_acc(1),sqrt(med_acc(2)^2+med_acc(3)^2))];
 
-    %%%%%%%%%%%%%%%%%%%%%
-    % Compute yaw angle %
-    %%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%
+    % Compute yaw angles %
+    %%%%%%%%%%%%%%%%%%%%%%
 
     diff_speed = diff(data.gnss.speed);
     diff_course = diff(unwrap(data.gnss.course));
@@ -22,9 +22,9 @@ function euler_angles = alignment_Nericell(data)
     [~, sorted_indices] = mink(valid_speeds, round(max(0.05*length(diff_speed),10)));    
     inds = valid_indices(sorted_indices);
 
-    % Rotate accelerometer measurements at braking events.
     R = Rot_Mat_Fnc([rp  0])';
-    accs = [];
+    phis = zeros(length(inds),1);
+    Rs = zeros(length(inds),1);
     for j = 1:length(inds)
 
         ind = inds(j);
@@ -32,15 +32,29 @@ function euler_angles = alignment_Nericell(data)
         start_index = max(closest_indices(ind) - 30, 1);
         end_index = min(closest_indices(ind) + 30, size(data.imu.accelerometers, 2));                 
 
-        accs = [accs R*data.imu.accelerometers(:, start_index:end_index)];
-       
+        rot_accs = R*data.imu.accelerometers(:, start_index:end_index);
+        phis(j) = -pi-atan2(mean(rot_accs(2,:)),mean(rot_accs(1,:)));
+        Rs(j) = 2^2/mean(abs(rot_accs(1,:)));
+
     end
 
-    % Extract angle from rotated accelerometer measurements.
-    x = -pi-atan2(mean(accs(2,:)),mean(accs(1,:)));
+    %%%%%%%%%%%%%%%%%
+    % Kalman filter %
+    %%%%%%%%%%%%%%%%%
 
-    R = Rot_Mat_Fnc([rp x]);
-    
+    x = phis(1);
+    P = Rs(1);
+    Q = 0^2;
+    for i = 2:length(phis)
+        P = P+Q;
+        R = Rs(i);
+        K = P/(P+R);
+        x = x+K*(mod(phis(i)-x+pi,2*pi)-pi);
+        P = (1-K)*P;
+    end
+
+    R = Rot_Mat_Fnc([rp x]);   
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     % Calculate Euler angles %
     %%%%%%%%%%%%%%%%%%%%%%%%%%
