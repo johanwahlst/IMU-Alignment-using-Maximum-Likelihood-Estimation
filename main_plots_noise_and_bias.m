@@ -16,7 +16,6 @@ N_symmetries = 24;
 
 % Initialise matrix for results
 Geodesic_distance = zeros(numel(fileList),N_symmetries,Param_values,Param_fncs,N_Sim,3);
-Angles_distance = zeros(3,numel(fileList),N_symmetries,Param_values,Param_fncs,N_Sim,3);
 
 % Iterate over each file
 for i = 1:length(fileList)
@@ -52,13 +51,13 @@ for i = 1:length(fileList)
                 params = parameters(k,l,Param_values);              
 
                 for m = 1:N_Sim
-                    
+                   
                     % Add measurement errors 
                     data_with_errors = add_errors(data_rotated,params);                
                   
                     % Run Nericell algorithm
-                    euler_angles_nericell = alignment_Nericell(data_with_errors);
-                    Geodesic_distance(i,j,k,l,m,1) = geodesic_distance(Rot_Mat_Fnc(euler_angles_nericell),artificial_rotation);   
+                    euler_angles_nericell = alignment_Nericell(data_with_errors);                                                                    
+                    Geodesic_distance(i,j,k,l,m,1) = geodesic_distance(Rot_Mat_Fnc(euler_angles_nericell),artificial_rotation);                 
 
                     % Run PCA-correlation
                     euler_angles_pca_correlation = alignment_Woo(data_with_errors);
